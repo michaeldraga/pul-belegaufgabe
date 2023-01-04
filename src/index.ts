@@ -32,7 +32,7 @@ async function processStlSheet(rows: Row[]) {
   const componentRow = rows[2];
   const components: Partial<Product>[] = componentRow
     .slice(1)
-    .map((name) => ({ name: name.toString() }));
+    .map((name) => ({ name: name.toString(), depends: [] }));
   components.forEach((component) => (products[component.name] = component));
   const productRows = rows.slice(4);
   for (const row of productRows) {
@@ -143,7 +143,84 @@ async function readInputFile() {
   }
 }
 
-readInputFile();
+function unfoldOrderRecursively(
+  order: Partial<Order>,
+  products: Record<string, Partial<Product>>
+) {
+  console.log('unfoldOrderRecursively(order, products)');
+  const product = products[order.product];
+  console.log(product);
+  const productDependencyOrders = [];
+  for (let i = 0; i < product.depends.length; i++) {
+    const dependency = product.depends[i];
+    console.log(dependency);
+    const dependencyOrder = {
+      ...dependency,
+      quantity: order.quantity * dependency.quantity,
+      deadline: order.deadline - product.processingTimePerUnit * order.quantity,
+    };
+    const dependencyDependencyOrders = unfoldOrderRecursively(
+      dependencyOrder,
+      products
+    );
+    productDependencyOrders.push(
+      dependencyOrder,
+      ...dependencyDependencyOrders
+    );
+  }
+
+  productDependencyOrders;
+
+  return productDependencyOrders;
+}
+
+async function calculateQuantityPlanning(
+  orders: Order[],
+  products: Record<string, Partial<Product>>
+) {
+  console.log(products);
+  console.log(orders);
+  // unfold orders to include all dependencies
+  const unfoldedOrders = [
+    ...orders.flatMap((order) => unfoldOrderRecursively(order, products)),
+    ...orders,
+  ];
+  const sortedUnfoldedOrders = unfoldedOrders.sort(
+    // sort first by deadline, then by name
+    (a, b) => a.deadline - b.deadline || a.product.localeCompare(b.product)
+  );
+  console.log(sortedUnfoldedOrders);
+  return sortedUnfoldedOrders;
+}
+
+async function displayOrders(orders: Order[], products: Record<string, Partial<Product>>) {
+  // task structure
+  // {
+  //     id: 'Task 1',
+  //     name: 'Redesign website',
+  //     start: '2016-12-28',
+  //     end: '2016-12-31',
+  //     progress: 20,
+  //     dependencies: 'Task 2, Task 3'
+  // },
+  const tasks = orders.map((order) => ({
+    id: order.product,
+    name: order.product,
+    start: new Date().setDate(order.deadline - order.quantity * products[order.product].processingTimePerUnit),
+    end: new Date().setDate(order.deadline),
+    progress: order.quantity,
+  }));
+  // @ts-ignore
+  console.log(tasks);
+}
+
+async function main() {
+  await readInputFile();
+  const sortedUnfoldedOrders = await calculateQuantityPlanning(orders, products);
+  await displayOrders(sortedUnfoldedOrders, products);
+}
+
+main();
 
 type Order = {
   product: string;

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Belegarbeit</title>
+    <script>
+      var exports = {};
+    </script>
+    <script src="../node_modules/frappe-gantt/dist/frappe-gantt.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="../node_modules/frappe-gantt/dist/frappe-gantt.min.css"
+    />
+  </head>
+  <body>
+    <svg id="gantt"></svg>
+    <script>
+      const tasks = [
+        {
+          id: 'GEH-200',
+          name: 'GEH-200',
+          start: 1673356229897,
+          end: 1673442629898,
+          progress: 10,
+        },
+        {
+          id: 'RAD-100',
+          name: 'RAD-100',
+          start: 1673356229898,
+          end: 1673442629898,
+          progress: 10,
+        },
+        {
+          id: 'WEL-100',
+          name: 'WEL-100',
+          start: 1673356229898,
+          end: 1673442629898,
+          progress: 10,
+        },
+        {
+          id: 'GEH-100',
+          name: 'GEH-100',
+          start: 1673442629898,
+          end: 1673529029898,
+          progress: 10,
+        },
+        {
+          id: 'RAD-101',
+          name: 'RAD-101',
+          start: 1673356229898,
+          end: 1673529029898,
+          progress: 10,
+        },
+        {
+          id: 'ROT-100',
+          name: 'ROT-100',
+          start: 1673442629898,
+          end: 1673529029898,
+          progress: 10,
+        },
+        {
+          id: 'WEL-100',
+          name: 'WEL-100',
+          start: 1673442629898,
+          end: 1673529029898,
+          progress: 10,
+        },
+        {
+          id: 'GEH-100',
+          name: 'GEH-100',
+          start: 1673529029898,
+          end: 1673615429898,
+          progress: 10,
+        },
+        {
+          id: 'GEH-200',
+          name: 'GEH-200',
+          start: 1673529029898,
+          end: 1673615429898,
+          progress: 10,
+        },
+        {
+          id: 'P-100',
+          name: 'P-100',
+          start: 1673529029898,
+          end: 1673615429898,
+          progress: 10,
+        },
+        {
+          id: 'RAD-100',
+          name: 'RAD-100',
+          start: 1673529029898,
+          end: 1673615429898,
+          progress: 10,
+        },
+        {
+          id: 'ROT-101',
+          name: 'ROT-101',
+          start: 1673529029898,
+          end: 1673615429898,
+          progress: 10,
+        },
+        {
+          id: 'WEL-100',
+          name: 'WEL-100',
+          start: 1673529029898,
+          end: 1673615429898,
+          progress: 10,
+        },
+        {
+          id: 'GEH-100',
+          name: 'GEH-100',
+          start: 1673615429898,
+          end: 1673701829898,
+          progress: 10,
+        },
+        {
+          id: 'P-101',
+          name: 'P-101',
+          start: 1673615429898,
+          end: 1673701829898,
+          progress: 10,
+        },
+        {
+          id: 'ROT-100',
+          name: 'ROT-100',
+          start: 1673615429898,
+          end: 1673701829898,
+          progress: 10,
+        },
+        {
+          id: 'GEH-200',
+          name: 'GEH-200',
+          start: 1673701829898,
+          end: 1673788229898,
+          progress: 10,
+        },
+        {
+          id: 'GEH-200',
+          name: 'GEH-200',
+          start: 1673701829898,
+          end: 1673788229898,
+          progress: 10,
+        },
+        {
+          id: 'P-100',
+          name: 'P-100',
+          start: 1673701829898,
+          end: 1673788229898,
+          progress: 10,
+        },
+        {
+          id: 'RAD-100',
+          name: 'RAD-100',
+          start: 1673701829898,
+          end: 1673788229898,
+          progress: 10,
+        },
+        {
+          id: 'RAD-100',
+          name: 'RAD-100',
+          start: 1673701829898,
+          end: 1673788229898,
+          progress: 10,
+        },
+        {
+          id: 'RAD-101',
+          name: 'RAD-101',
+          start: 1673615429898,
+          end: 1673788229898,
+          progress: 10,
+        },
+        {
+          id: 'WEL-100',
+          name: 'WEL-100',
+          start: 1673701829898,
+          end: 1673788229898,
+          progress: 10,
+        },
+        {
+          id: 'WEL-100',
+          name: 'WEL-100',
+          start: 1673701829898,
+          end: 1673788229898,
+          progress: 10,
+        },
+        {
+          id: 'WEL-100',
+          name: 'WEL-100',
+          start: 1673701829898,
+          end: 1673788229898,
+          progress: 10,
+        },
+        {
+          id: 'GEH-100',
+          name: 'GEH-100',
+          start: 1673788229898,
+          end: 1673874629898,
+          progress: 10,
+        },
+        {
+          id: 'GEH-100',
+          name: 'GEH-100',
+          start: 1673788229898,
+          end: 1673874629898,
+          progress: 10,
+        },
+        {
+          id: 'GEH-100',
+          name: 'GEH-100',
+          start: 1673788229898,
+          end: 1673874629898,
+          progress: 10,
+        },
+        {
+          id: 'ROT-100',
+          name: 'ROT-100',
+          start: 1673788229898,
+          end: 1673874629898,
+          progress: 10,
+        },
+        {
+          id: 'ROT-100',
+          name: 'ROT-100',
+          start: 1673788229898,
+          end: 1673874629898,
+          progress: 10,
+        },
+        {
+          id: 'ROT-101',
+          name: 'ROT-101',
+          start: 1673788229898,
+          end: 1673874629898,
+          progress: 10,
+        },
+        {
+          id: 'P-100',
+          name: 'P-100',
+          start: 1673874629898,
+          end: 1673961029898,
+          progress: 10,
+        },
+        {
+          id: 'P-100',
+          name: 'P-100',
+          start: 1673874629898,
+          end: 1673961029898,
+          progress: 10,
+        },
+        {
+          id: 'P-101',
+          name: 'P-101',
+          start: 1673874629898,
+          end: 1673961029898,
+          progress: 10,
+        },
+      ]
+        .map((order) => ({
+          ...order,
+          start: new Date(new Date(order.start).setHours(0)),
+          end: new Date(new Date(order.end).setHours(0)),
+        }))
+        .sort(
+          // sort first by deadline, then by name
+          (a, b) => b.end - a.end || a.name.localeCompare(b.name)
+        );
+      const gantt = new Gantt('#gantt', tasks, {
+        on_click: function (task) {
+          alert(task.name);
+        },
+        on_date_change: function (task, start, end) {
+          alert(task.name + ' ' + start + ' ' + end);
+        },
+        on_progress_change: function (task, progress) {
+          alert(task.name + ' ' + progress);
+        },
+        // on_view_change: function (mode) {
+        //   alert(mode);
+        // },
+      });
+      gantt.change_view_mode('Day');
+    </script>
+  </body>
+</html>
