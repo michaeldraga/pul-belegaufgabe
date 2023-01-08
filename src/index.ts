@@ -135,8 +135,8 @@ async function processSheet(file: Buffer, sheetName: string) {
   return {
     [SheetNames.stl]: processStlSheet,
     [SheetNames.plan]: processPlanSheet,
-    [SheetNames.auftraege1]: processAuf1Sheet,
-    [SheetNames.auftraege2]: processAuf2Sheet,
+    [SheetNames.auftraege2]: processAuf1Sheet,
+    [SheetNames.auftraege1]: processAuf2Sheet,
   }[sheetName](rows);
 }
 
@@ -339,10 +339,14 @@ function postProcessMax(orders: Order[]) {
   const groupedOrders = groupAndSortDouble(orders, 'product', 'deadline');
   const processedOrders = [];
   for (const [key, value] of groupedOrders.entries()) {
+    let origins = [];
     let quantity = 0;
     let firstDeadline = value[0].deadline;
     for (let i = 0; i < value.length; i++) {
       quantity += value[i].quantity;
+      if (origins.indexOf(value[i].origin) === -1) {
+        origins.push(value[i].origin);
+      }
       // console.log(quantity);
       if (quantity > products[key].batchSize) {
         // console.log(quantity);
@@ -353,9 +357,11 @@ function postProcessMax(orders: Order[]) {
           start:
             firstDeadline -
             products[key].processingTimePerUnit * products[key].batchSize,
+          origin: origins.join(),
         });
         quantity = quantity - products[key].batchSize;
         firstDeadline = value[i].deadline;
+        origins = [value[i].origin];
       }
     }
     if (quantity > 0) {
@@ -364,6 +370,7 @@ function postProcessMax(orders: Order[]) {
         quantity,
         deadline: firstDeadline,
         start: firstDeadline - products[key].processingTimePerUnit * quantity,
+        origin: origins.join(),
       });
     }
   }
@@ -378,8 +385,12 @@ function postProcessFix(orders: Order[]) {
   for (const [key, value] of groupedOrders.entries()) {
     let quantity = 0;
     let firstDeadline = value[0].deadline;
+    let origins = [];
     for (let i = 0; i < value.length; i++) {
       quantity += value[i].quantity;
+      if (origins.indexOf(value[i].origin) === -1) {
+        origins.push(value[i].origin);
+      }
       if (quantity >= products[key].batchSize) {
         processedOrders.push({
           ...value[i],
@@ -388,9 +399,11 @@ function postProcessFix(orders: Order[]) {
           start:
             firstDeadline -
             products[key].processingTimePerUnit * products[key].batchSize,
+          origin: origins.join(),
         });
         quantity = quantity - products[key].batchSize;
         firstDeadline = value[i].deadline;
+        origins = [value[i].origin];
       }
     }
     if (quantity > 0) {
@@ -403,6 +416,7 @@ function postProcessFix(orders: Order[]) {
           products[key].processingTimePerUnit *
             quantity *
             products[key].batchSize,
+        origin: origins.join(),
       });
     }
   }
@@ -472,30 +486,81 @@ function isOverlapping(order1: Order, order2: Order) {
   );
 }
 
+const ressourceOrder = {
+  Montage: 1,
+  Vormontage: 2,
+  Fräserei: 3,
+  Dreherei: 4,
+  Stanzerei: 5,
+};
+
 function sequenceConcurrentOrders(orders: Order[]) {
   console.log('sequenencencencnecnecnecnenc');
-  const ressourceGroups = groupAndSortDouble(orders, 'ressource', 'start');
+  const ressourceGroups = groupAndSortDouble(orders, 'ressource', 'deadline');
   const plannedOrders = [];
-  for (const [key, value] of ressourceGroups.entries()) {
-    console.log('valuie');
-    console.log(key);
-    console.log(value);
-    let firstOrder = value[0];
-    for (let i = 1; i < value.length; i++) {
-      if (isOverlapping(firstOrder, value[i])) {
-        firstOrder.deadline = value[i].start;
-        firstOrder.start =
-          firstOrder.deadline -
-          products[firstOrder.product].processingTimePerUnit *
-            firstOrder.quantity;
+  const ressourceEntries = Array.from(ressourceGroups.entries()).sort(
+    (a, b) => {
+      return ressourceOrder[a[0]] - ressourceOrder[b[0]];
+    }
+  );
+  console.log(ressourceEntries);
+  for (let i = 0; i < ressourceEntries.length; i++) {
+    const [key, value] = ressourceEntries[i];
+    const sequencedOrders = [];
+    // console.log(value);
+    let latestOrder = value[value.length - 1];
+    sequencedOrders.push(latestOrder);
+    for (let i = value.length - 2; i >= 0; i--) {
+      // console.log('latestOrder');
+      // console.log(latestOrder);
+      // console.log('value[i]');
+      // console.log(value[i]);
+      if (value[i].deadline > latestOrder.start) {
+        const newOrder = {
+          ...value[i],
+          deadline: latestOrder.start,
+          start:
+            latestOrder.start -
+            products[value[i].product].processingTimePerUnit *
+              value[i].quantity,
+        };
+        sequencedOrders.push(newOrder);
+        latestOrder = newOrder;
       } else {
-        plannedOrders.push(firstOrder);
-        firstOrder = value[i];
+        sequencedOrders.push(value[i]);
+        latestOrder = value[i];
       }
     }
-    plannedOrders.push(firstOrder);
-    console.log('plnannedOrdres');
-    console.log(plannedOrders);
+
+    for (const order of sequencedOrders) {
+      for (let j = i; j < ressourceEntries.length; j++) {
+        const [key2, value2] = ressourceEntries[j];
+        for (const order2 of value2) {
+          if (
+            (order2.origin as string).includes(order.origin) &&
+            order.product === order2.dependedOnBy
+          ) {
+            console.log('order');
+            console.log(order);
+            console.log('order2');
+            console.log(order2);
+            if (order2.deadline > order.start) {
+              console.log('bingo');
+              order2.deadline = order.start;
+              order2.start =
+                order.start -
+                products[order2.product].processingTimePerUnit *
+                  order2.quantity;
+            }
+          }
+        }
+      }
+    }
+
+    plannedOrders.push(...sequencedOrders);
+
+    // console.log(sequencedOrders);
+    // break;
   }
   return plannedOrders;
 }
@@ -526,29 +591,48 @@ function calculateProductionPlanning(
 ): Order[] {
   console.log('orders');
   // sort orders by deadline, if deadline is equal, sort by name
-  const sortedOrders = multiSort(orders, 'deadline:asc', 'product:desc');
+  // const sortedOrders = multiSort(orders, 'deadline:asc', 'product:desc');
   // console.log(sortedOrders);
   // since each ressource can only process one order at a time, we can just
   // iterate over the orders and calculate the end time of each order
   // by subtracting the processing time from the deadline
   const plannedOrders = [];
-  const ordersInSequence = sequenceConcurrentOrders(sortedOrders);
-  plannedOrders.push(...ordersInSequence);
-  for (let i = 0; i < plannedOrders.length; ) {
-    // console.log('please help');
-    // console.log(plannedOrders.slice(i));
-    // break;
-    const unfoldedOrders = plannedOrders
-      .slice(i)
-      .flatMap((order) => unfoldOrderOneStep(order, products));
-    // console.log(unfoldedOrders);
-    // const postProcessedOrders = postProcessOrders(unfoldedOrders);
-    const sequencedOrders = sequenceConcurrentOrders(unfoldedOrders);
-    plannedOrders.push(...sequencedOrders);
-    i += unfoldedOrders.length || 1;
-  }
+  const ordersInSequence = sequenceConcurrentOrders(orders);
+  // plannedOrders.push(...ordersInSequence);
+  // for (let i = 0; i < plannedOrders.length; ) {
+  //   // console.log('please help');
+  //   // console.log(plannedOrders.slice(i));
+  //   // break;
+  //   // console.log(unfoldedOrders);
+  //   // const postProcessedOrders = postProcessOrders(unfoldedOrders);
+  //   const sequencedOrders = sequenceConcurrentOrders(unfoldedOrders);
+  //   plannedOrders.push(...sequencedOrders);
+  //   i += unfoldedOrders.length || 1;
+  // }
   // console.log(plannedOrders);
-  return plannedOrders;
+  return ordersInSequence;
+}
+
+function moveEarlyOrdersForward(
+  orders: Order[],
+  products: Record<string, Partial<Product>>
+): Order[] {
+  console.log('EEEEEEEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAAAAAAAAAAAARRRRRRRRRRRRRRRRRRRRRRRRRLLLLLLLLLLLLLLLYYYYYYYYYYYYY');
+  const movedOrders = [];
+  for (const order of orders) {
+    if (order.start < 0) {
+      movedOrders.push({
+        ...order,
+        start: 0,
+        deadline: order.deadline - order.start,
+      });
+    } else {
+      // movedOrders.push(order);
+    }
+  }
+  console.log(movedOrders);
+  // return movedOrders;
+  return [];
 }
 
 async function main() {
@@ -559,16 +643,20 @@ async function main() {
   );
   const processedOrders = postProcessOrders(sortedUnfoldedOrders);
   const tasks = await displayOrders(processedOrders, products);
-  writeTasksToFile(tasks, 'data');
-  const unfoldedOrders = await calculateProductionPlanning(processedOrders, products);
+  writeTasksToFile(tasks, 'tasks');
+  const unfoldedOrders = await calculateProductionPlanning(
+    processedOrders,
+    products
+  );
+  const movedOrders = moveEarlyOrdersForward(unfoldedOrders, products);
   // const processedPlannedOrders = postProcessOrders(unfoldedOrders);
   // sequence all orders that are on the same ressource
   // to do that, we need to group all orders by ressource and sort them by start
   // then we can iterate over the groups and call sequenceConcurrentOrders on them
   // console.log('BOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOONK')
   // const plannedOrders = sequenceConcurrentOrders(processedPlannedOrders);
-  const unfoldedTasks = await displayOrders(unfoldedOrders, products);
-  writeTasksToFile(unfoldedTasks, 'produktion');
+  // const unfoldedTasks = await displayOrders(unfoldedOrders, products);
+  // writeTasksToFile(unfoldedTasks, 'produktion');
 }
 
 main();

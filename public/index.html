@@ -55,9 +55,7 @@
             start: new Date(new Date(order.start).setHours(0)),
             end: new Date(new Date(order.end).setHours(0)),
           }))
-          .sort(
-            (a, b) => b.end - a.end || a.name.localeCompare(b.name)
-          );
+          .sort((a, b) => b.end - a.end || a.name.localeCompare(b.name));
 
         function groupAndSortDouble(objects, groupKey, sortKey1, sortKey2) {
           const map = new Map();
@@ -185,7 +183,9 @@
               name: ressource,
               orientation: 'h',
               type: 'bar',
-              textposition: 'auto',
+              textposition: 'inside',
+              // text: value.map((task) => `${task.name} (${task.progress})`),
+              text: value.map((task) => `${task.name}`),
               marker: {
                 color: value.map((task) => productColors[task.name]),
               },
@@ -409,7 +409,7 @@
         );
       }
       main();
-      setInterval(main, 1000);
+      // setInterval(main, 1000);
     </script>
   </body>
 </html>

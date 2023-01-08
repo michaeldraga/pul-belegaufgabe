@@ -139,13 +139,15 @@
             name: ressource,
             orientation: 'h',
             type: 'bar',
-            textposition: 'auto',
+            textposition: 'center',
+            text: ressourceTasks.map((task) => `${task.name}`),
+            // text: ressourceTasks.map((task) => `${task.name} (${task.progress})`),
             marker: {
               color: ressourceTasks.map((task) => productColors[task.name]),
             },
             hovertemplate: ressourceTasks.map(
               (task) =>
-                `Product=${task.name}<br>Start=%{base}<br>Finish=%{x}<extra></extra>`
+                `Product=${task.name}<br>Start=%{base}<br>Finish=%{x}<br>Quantity=${task.progress}<extra></extra>`
             ),
           });
         }
@@ -340,7 +342,7 @@
         );
       }
       main();
-      setInterval(main, 5000);
+      // setInterval(main, 5000);
     </script>
   </body>
 </html>
