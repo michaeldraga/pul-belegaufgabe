@@ -48,16 +48,16 @@
           return map;
         }
 
-        const tasksResponse = await fetch('http://localhost:3000/tasks.json');
+        const tasksResponse = await fetch(
+          'http://localhost:3000/produktion.json'
+        );
         const tasks = (await tasksResponse.json())
           .map((order) => ({
             ...order,
             start: new Date(new Date(order.start).setHours(0)),
             end: new Date(new Date(order.end).setHours(0)),
           }))
-          .sort(
-            (a, b) => b.end - a.end || a.name.localeCompare(b.name)
-          );
+          .sort((a, b) => b.end - a.end || a.name.localeCompare(b.name));
 
         function groupAndSortDouble(objects, groupKey, sortKey1, sortKey2) {
           const map = new Map();
@@ -101,6 +101,7 @@
         );
 
         const uniqueProductNames = [];
+        console.log(sortedTasks);
         for (const ressource in ressourceOrder) {
           console.log(ressource);
           const ressourceTasks = sortedTasks.get(ressource);
@@ -128,97 +129,27 @@
         for (const ressource in ressourceOrder) {
           console.log(ressource);
           const ressourceTasks = sortedTasks.get(ressource);
-          const groupedRessourceTasks = groupAndSortDouble(
-            ressourceTasks,
-            'name',
-            'start',
-            'end'
-          );
+          console.log(ressourceTasks);
+          console.log(ressource);
 
-          for (const [key, value] of groupedRessourceTasks.entries()) {
-            const explodedProductNames = [value[0].name];
-            const duplications = {};
-            for (let i = 1; i < value.length; i++) {
-              const task = value[i];
-              const taskStart = +new Date(task.start);
-              const taskEnd = +new Date(+new Date(task.start) + task.end);
-              const previousTaskEnd = +new Date(
-                +new Date(value[i - 1].start) + task.end
-              );
-              const previousTaskStart = +new Date(value[i - 1].start);
-
-              if (
-                !(
-                  (taskStart <= previousTaskStart &&
-                    taskEnd <= previousTaskStart) ||
-                  (taskStart >= previousTaskEnd && taskEnd >= previousTaskEnd)
-                ) &&
-                task.name === value[i - 1].name &&
-                (duplications[task.name] || 0) <
-                  task.productMaximumConcurrentOrders
-              ) {
-                console.log('explode');
-                console.log(duplications[task.name]);
-                console.log(task.productMaximumConcurrentOrders);
-                if (duplications[task.name] === undefined) {
-                  duplications[task.name] = 1;
-                } else {
-                  duplications[task.name]++;
-                }
-                explodedProductNames.push(
-                  `${task.name} (${duplications[task.name]})`
-                );
-              } else {
-                explodedProductNames.push(task.name);
-              }
-            }
-            console.log(explodedProductNames);
-            console.log(ressourceTasks);
-
-            console.log('entries');
-            console.log(value.entries());
-
-            plotData.push({
-              x: value.map((task) => task.end),
-              y: explodedProductNames.filter((name) => name.includes(key)),
-              base: value.map((task) => task.start),
-              name: ressource,
-              orientation: 'h',
-              type: 'bar',
-              textposition: 'auto',
-              marker: {
-                color: value.map((task) => productColors[task.name]),
-              },
-              hovertemplate: value.map(
-                (task) =>
-                  `Product=${task.name}<br>Start=%{base}<br>Finish=%{x}<extra></extra>`
-              ),
-            });
-          }
+          plotData.push({
+            x: ressourceTasks.map((task) => task.end),
+            y: ressourceTasks.map((task) => ressource),
+            base: ressourceTasks.map((task) => task.start),
+            name: ressource,
+            orientation: 'h',
+            type: 'bar',
+            textposition: 'auto',
+            marker: {
+              color: ressourceTasks.map((task) => productColors[task.name]),
+            },
+            hovertemplate: ressourceTasks.map(
+              (task) =>
+                `Product=${task.name}<br>Start=%{base}<br>Finish=%{x}<extra></extra>`
+            ),
+          });
         }
 
-        // insert product name with increasing number appended directly after the first occurence for all tasks where maximumConcurrentOrders is not undefined and greater than 1
-        const explodedProductNames = [];
-        for (let i = 0; i < uniqueProductNames.length; i++) {
-          const productName = uniqueProductNames[i];
-          explodedProductNames.push(productName);
-          const task = tasks.find((task) => task.name === productName);
-          if (task.productMaximumConcurrentOrders > 1) {
-            for (let j = 1; j < task.productMaximumConcurrentOrders; j++) {
-              explodedProductNames.push(`${productName} (${j})`);
-            }
-          }
-        }
-
-        // sort uniqueProductNames first by ressource using ressourceOrder and secondly by name
-        explodedProductNames.sort((a, b) => {
-          if (a[0] === b[0]) {
-            return a < b ? 1 : -1;
-          }
-          return ressourceOrder[a[0]] > ressourceOrder[b[0]] ? 1 : -1;
-        });
-
-        console.log(explodedProductNames);
         console.log(plotData);
 
         TESTER = document.getElementById('tester');
@@ -409,7 +340,7 @@
         );
       }
       main();
-      setInterval(main, 1000);
+      setInterval(main, 5000);
     </script>
   </body>
 </html>
