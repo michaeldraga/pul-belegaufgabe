@@ -6,7 +6,7 @@
   "scripts": {
     "start": "yarn build && node dist/index.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
-    "serve": "yarn serve public",
+    "server": "yarn serve public",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "build": "tsc --outDir dist --pretty"

@@ -1,6 +1,7 @@
 import readXlsxFile, { readSheetNames, Row } from 'read-excel-file/node';
 import fs from 'fs/promises';
 import path from 'path';
+import { group } from 'console';
 
 function isString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
@@ -617,22 +618,48 @@ function moveEarlyOrdersForward(
   orders: Order[],
   products: Record<string, Partial<Product>>
 ): Order[] {
-  console.log('EEEEEEEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAAAAAAAAAAAARRRRRRRRRRRRRRRRRRRRRRRRRLLLLLLLLLLLLLLLYYYYYYYYYYYYY');
-  const movedOrders = [];
+  console.log(
+    'EEEEEEEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAAAAAAAAAAAARRRRRRRRRRRRRRRRRRRRRRRRRLLLLLLLLLLLLLLLYYYYYYYYYYYYY'
+  );
+  const earlyOrders = [];
   for (const order of orders) {
     if (order.start < 0) {
-      movedOrders.push({
+      earlyOrders.push({
         ...order,
         start: 0,
         deadline: order.deadline - order.start,
       });
-    } else {
-      // movedOrders.push(order);
     }
   }
-  console.log(movedOrders);
-  // return movedOrders;
-  return [];
+  console.log(earlyOrders);
+  // group by ressource
+  // move order forwards until starts at 0
+  // iterate over all orders of ressource starting at order
+  //    if order.end after order start of order on same ressource from same origin <- goto1
+  //        move the order that is overlapped (order2, not the one already moved) forward so that order2.start = order.end
+  //        goto goto1
+  //    elif order overlaps other order (order2) on same ressource (and clearly not from same origin)
+  //        move order so that order.start = order2.end
+  //
+  const groupedOrders = groupAndSortDouble(orders, 'ressource', 'start');
+  const ressourceEntries = Object.entries(groupedOrders);
+  for (let i = 0; i < ressourceEntries.length; i++) {
+    const [key, value] = ressourceEntries[i];
+    const earlyOrdersForRessource = earlyOrders.filter(
+      (order) => order.ressource === key
+    );
+    let nextOrder = value[1];
+    for (const earlyOrder of earlyOrdersForRessource) {
+      if (earlyOrder.end > nextOrder.start) {
+        earlyOrder.start = nextOrder.end;
+        earlyOrder.deadline = earlyOrder.deadline - earlyOrder.start;
+      }
+      nextOrder = earlyOrder;
+    }
+  }
+  // console.log(groupedOrders);
+  // console.log(earlyOrders);
+  return earlyOrders;
 }
 
 async function main() {
@@ -655,8 +682,8 @@ async function main() {
   // then we can iterate over the groups and call sequenceConcurrentOrders on them
   // console.log('BOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOONK')
   // const plannedOrders = sequenceConcurrentOrders(processedPlannedOrders);
-  // const unfoldedTasks = await displayOrders(unfoldedOrders, products);
-  // writeTasksToFile(unfoldedTasks, 'produktion');
+  const unfoldedTasks = await displayOrders(unfoldedOrders, products);
+  writeTasksToFile(unfoldedTasks, 'produktion');
 }
 
 main();
