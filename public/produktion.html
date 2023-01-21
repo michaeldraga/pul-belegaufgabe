@@ -49,7 +49,7 @@
         }
 
         const tasksResponse = await fetch(
-          'http://localhost:3000/produktion.json'
+          'http://localhost:45591/produktion.json'
         );
         const tasks = (await tasksResponse.json())
           .map((order) => ({

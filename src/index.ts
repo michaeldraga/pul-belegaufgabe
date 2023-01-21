@@ -135,8 +135,8 @@ async function processSheet(file: Buffer, sheetName: string) {
   return {
     [SheetNames.stl]: processStlSheet,
     [SheetNames.plan]: processPlanSheet,
-    [SheetNames.auftraege2]: processAuf1Sheet,
-    [SheetNames.auftraege1]: processAuf2Sheet,
+    [SheetNames.auftraege1]: processAuf1Sheet,
+    [SheetNames.auftraege2]: processAuf2Sheet,
   }[sheetName](rows);
 }
 
